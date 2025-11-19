@@ -89,7 +89,7 @@ npm run db:push
 \`\`\`
 
 ## Project Structure
-
+```
 src/
 ├── app/                    # Next.js app directory
 │   ├── activities/        # Activities page
@@ -106,7 +106,7 @@ src/
 │       ├── routers/      # tRPC routers
 │       └── trpc.ts       # tRPC setup
 └── styles/               # Global styles
-
+```
 
 ## Scripts
 
