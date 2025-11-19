@@ -1,0 +1,292 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+}
+
+model Company {
+    id          String   @id @default(cuid())
+    name        String
+    website     String?
+    industry    String?
+    size        String?
+    description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    contacts    Contact[]
+    deals       Deal[]
+    
+    @@index([name])
+}
+
+model Contact {
+    id          String   @id @default(cuid())
+    firstName   String
+    lastName    String
+    email       String   @unique
+    phone       String?
+    title       String?
+    companyId   String?
+    company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+    tags        String?
+    notes       String?
+    status      String   @default("ACTIVE")
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    activities  Activity[]
+    deals       Deal[]
+    
+    @@index([email])
+    @@index([companyId])
+}
+
+model Deal {
+    id          String   @id @default(cuid())
+    title       String
+    value       Float
+    stage       String
+    probability Int      @default(0)
+    contactId   String?
+    contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+    companyId   String?
+    company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+    expectedCloseDate DateTime?
+    description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    activities  Activity[]
+    quotes      Quote[]
+    
+    @@index([stage])
+    @@index([contactId])
+    @@index([companyId])
+}
+
+model Activity {
+    id          String   @id @default(cuid())
+    type        String
+    title       String
+    description String?
+    dueDate     DateTime?
+    completed   Boolean  @default(false)
+    contactId   String?
+    contact     Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+    dealId      String?
+    deal        Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([completed])
+    @@index([dueDate])
+    @@index([contactId])
+    @@index([dealId])
+}
+
+model Note {
+    id          String   @id @default(cuid())
+    content     String
+    entityType  String
+    entityId    String
+    createdBy   String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([entityType, entityId])
+}
+
+model Tag {
+    id          String   @id @default(cuid())
+    name        String   @unique
+    color       String?
+    entityType  String
+    entityId    String
+    createdAt   DateTime @default(now())
+    
+    @@index([entityType, entityId])
+    @@index([name])
+}
+
+model File {
+    id          String   @id @default(cuid())
+    name        String
+    url         String
+    size        Int
+    mimeType    String
+    entityType  String
+    entityId    String
+    uploadedBy  String?
+    createdAt   DateTime @default(now())
+    
+    @@index([entityType, entityId])
+}
+
+model CustomField {
+    id          String   @id @default(cuid())
+    name        String
+    fieldType   String
+    value       String
+    entityType  String
+    entityId    String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([entityType, entityId])
+}
+
+model EmailTemplate {
+    id          String   @id @default(cuid())
+    name        String
+    subject     String
+    body        String
+    category    String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([category])
+}
+
+model Product {
+    id          String   @id @default(cuid())
+    name        String
+    description String?
+    sku         String?  @unique
+    price       Float
+    cost        Float?
+    isActive    Boolean  @default(true)
+    category    String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    quoteItems  QuoteItem[]
+    
+    @@index([sku])
+    @@index([category])
+}
+
+model Quote {
+    id          String   @id @default(cuid())
+    quoteNumber String   @unique
+    title       String
+    status      String   @default("draft")
+    dealId      String?
+    deal        Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+    contactId   String?
+    companyId   String?
+    subtotal    Float    @default(0)
+    tax         Float    @default(0)
+    total       Float    @default(0)
+    validUntil  DateTime?
+    notes       String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    items       QuoteItem[]
+    
+    @@index([quoteNumber])
+    @@index([dealId])
+    @@index([status])
+}
+
+model QuoteItem {
+    id          String   @id @default(cuid())
+    quoteId     String
+    quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+    productId   String?
+    product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+    description String
+    quantity    Float
+    unitPrice   Float
+    discount    Float    @default(0)
+    total       Float
+    
+    @@index([quoteId])
+    @@index([productId])
+}
+
+model User {
+    id          String    @id @default(cuid())
+    email       String    @unique
+    name        String
+    password    String?
+    role        String    @default("support")
+    isActive    Boolean   @default(true)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    
+    accounts    Account[]
+    sessions    Session[]
+    
+    @@index([email])
+}
+
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+model Comment {
+    id          String   @id @default(cuid())
+    content     String
+    entityType  String
+    entityId    String
+    authorId    String?
+    mentions    String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([entityType, entityId])
+    @@index([authorId])
+}
+
+model Permission {
+    id          String   @id @default(cuid())
+    role        String
+    resource    String
+    action      String
+    enabled     Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@unique([role, resource, action])
+    @@index([role])
+}
